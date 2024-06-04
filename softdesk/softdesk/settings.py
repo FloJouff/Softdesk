@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     # "allauth.account",
     "rest_framework",
     "authentication",
-    "project",
+    # "project",
 ]
 
 MIDDLEWARE = [
@@ -141,4 +141,4 @@ AUTH_USER_MODEL = "authentication.User"
 
 SITE_ID = 1
 
-REST_FRAMEWORK = {"DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination", "PAGE_SIZE": 3}
+REST_FRAMEWORK = {"DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination", "PAGE_SIZE": 5}

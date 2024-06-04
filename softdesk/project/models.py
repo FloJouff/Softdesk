@@ -14,3 +14,9 @@ class Project(models.Model):
     )
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="authored_projects")
     created_time = models.DateTimeField(auto_now_add=True)
+
+
+class Contributor(models.Model):
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    created_time = models.DateTimeField(auto_now_add=True)

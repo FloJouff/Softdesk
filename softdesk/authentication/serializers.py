@@ -21,7 +21,9 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def validate_date_of_birth(self, value):
-        """Check if user is old enought to create a profil"""
+        """
+        Check if user is old enought to create a profil
+        """
         today = date.today()
         min_age = 15
         min_birth_date = today.replace(year=today.year - min_age)
