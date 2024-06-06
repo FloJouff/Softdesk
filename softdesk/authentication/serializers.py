@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["username", "password", "date_of_birth", "can_be_contacted", "can_data_be_shared"]
+        fields = ["id", "username", "password", "date_of_birth", "can_be_contacted", "can_data_be_shared"]
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -31,3 +31,10 @@ class UserSerializer(serializers.ModelSerializer):
         if value > min_birth_date:
             raise ValidationError("Vous devez avoir au moins 15 ans pour vous inscrire")
         return value
+
+
+# class UserProjectSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model = User
+#         fields = ["username"]

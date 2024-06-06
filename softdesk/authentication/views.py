@@ -7,7 +7,7 @@ from authentication.models import User
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows users to be viewed or edited.
+    API endpoint that allows users to be created, viewed, edited or deleted.
     """
 
     serializer_class = UserSerializer
