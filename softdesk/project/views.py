@@ -1,18 +1,44 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
 
-from project.serializers import ProjectSerializer, ContributorSerializer, IssueSerializer, CommentSerializer
+from project.serializers import (
+    ProjectListSerializer,
+    ProjectDetailSerializer,
+    ContributorSerializer,
+    IssueListSerializer,
+    IssueDetailSerializer,
+    CommentSerializer,
+)
 from project.models import Project, Contributor, Issue, Comment
 from authentication.models import User
+from project.permissions import (
+    IsAuthorOrAssignee,
+    IsAuthorOrReadOnlyForContributorsProject,
+    IsProjectContributor_Comment,
+    IsProjectContributor_Issue,
+)
 
 
-class ProjectViewSet(viewsets.ModelViewSet):
+class MultipleSerializerMixin:
+
+    detail_serializer_class = None
+
+    def get_serializer_class(self):
+        if self.action == "retrieve" and self.detail_serializer_class is not None:
+            return self.detail_serializer_class
+        return super().get_serializer_class()
+
+
+class ProjectViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
     """
     API endpoint that allows Project to be created, viewed, edited or deleted.
     """
 
-    serializer_class = ProjectSerializer
+    serializer_class = ProjectListSerializer
+    detail_serializer_class = ProjectDetailSerializer
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnlyForContributorsProject]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -50,19 +76,38 @@ class ContributorViewSet(viewsets.ModelViewSet):
         return Contributor.objects.all()
 
 
-class IssueViewSet(viewsets.ModelViewSet):
+class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
+    """
+    API endpoint that allows Issues to be created, viewed, edited or deleted.
+    """
+
     queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = IssueListSerializer
+    permission_classes = [IsAuthenticated, IsAuthorOrAssignee, IsProjectContributor_Issue]
+
+    def get_serializer_class(self):
+        if self.action in ["list", "retrieve"]:
+            return IssueListSerializer
+        return IssueDetailSerializer
+
+    def get_queryset(self):
+        return Issue.objects.filter(project__contributors=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(viewsets.ModelViewSet, MultipleSerializerMixin):
+    """
+    API endpoint that allows Comments to be created, viewed, edited or deleted.
+    """
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectContributor_Comment]
+
+    def get_queryset(self):
+        return Comment.objects.filter(issue__project__contributors=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

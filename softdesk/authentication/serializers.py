@@ -31,10 +31,3 @@ class UserSerializer(serializers.ModelSerializer):
         if value > min_birth_date:
             raise ValidationError("Vous devez avoir au moins 15 ans pour vous inscrire")
         return value
-
-
-# class UserProjectSerializer(serializers.ModelSerializer):
-
-#     class Meta:
-#         model = User
-#         fields = ["username"]
