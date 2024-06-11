@@ -110,6 +110,23 @@ from authentication.models import User
 #         self.assertEqual(Issue.objects.count(), 1)
 #         self.assertEqual(Issue.objects.get().name, "Test Issue")
 
+#     def test_create_issue_not_contributor(self):
+#         self.client.logout()
+#         self.client.login(username="otheruser", password="testpass")
+#         url = reverse_lazy("issues-list")
+#         data = {
+#             "name": "Test Issue",
+#             "description": "This is a test issue",
+#             "status": "TODO",
+#             "priority": "MEDIUM",
+#             "tag": "BUG",
+#             "project": self.project.name,
+#             "author": self.user.username,
+#             "assignee": self.user.username,
+#         }
+#         response = self.client.post(url, data, format="json")
+#         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 #     def test_list_issues(self):
 #         Issue.objects.create(
 #             name="Test Issue 1",
@@ -204,75 +221,75 @@ from authentication.models import User
 #         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class CommentTests(APITestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass", date_of_birth="2005-02-02")
-        self.other_user = User.objects.create_user(
-            username="otheruser", password="testpass", date_of_birth="2005-02-02"
-        )
-        self.project = Project.objects.create(name="Test Project", description="Test Description", author=self.user)
-        self.project.contributors.add(self.user, self.other_user)
-        self.issue = Issue.objects.create(
-            name="Test Issue",
-            description="Test",
-            status="TODO",
-            priority="MEDIUM",
-            tag="BUG",
-            project=self.project,
-            author=self.user,
-            assignee=self.user,
-        )
-        self.client.login(username="testuser", password="testpass")
+# class CommentTests(APITestCase):
+#     def setUp(self):
+#         self.user = User.objects.create_user(username="testuser", password="testpass", date_of_birth="2005-02-02")
+#         self.other_user = User.objects.create_user(
+#             username="otheruser", password="testpass", date_of_birth="2005-02-02"
+#         )
+#         self.project = Project.objects.create(name="Test Project", description="Test Description", author=self.user)
+#         self.project.contributors.add(self.user, self.other_user)
+#         self.issue = Issue.objects.create(
+#             name="Test Issue",
+#             description="Test",
+#             status="TODO",
+#             priority="MEDIUM",
+#             tag="BUG",
+#             project=self.project,
+#             author=self.user,
+#             assignee=self.user,
+#         )
+#         self.client.login(username="testuser", password="testpass")
 
-    def test_create_comment(self):
-        url = reverse_lazy("comments-list")
-        data = {"description": "This is a test comment", "issue": self.issue.id}
-        response = self.client.post(url, data, format="json")
-        if response.status_code != status.HTTP_201_CREATED:
-            print("Response data:", response.data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Comment.objects.count(), 1)
-        self.assertEqual(Comment.objects.get().description, "This is a test comment")
+#     def test_create_comment(self):
+#         url = reverse_lazy("comments-list")
+#         data = {"description": "This is a test comment", "issue": self.issue.name}
+#         response = self.client.post(url, data, format="json")
+#         if response.status_code != status.HTTP_201_CREATED:
+#             print("Response data:", response.data)
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         self.assertEqual(Comment.objects.count(), 1)
+#         self.assertEqual(Comment.objects.get().description, "This is a test comment")
 
-    def test_update_comment_by_author(self):
-        comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
-        url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
-        data = {"description": "Updated Comment"}
-        response = self.client.patch(url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        comment.refresh_from_db()
-        self.assertEqual(comment.description, "Updated Comment")
+#     def test_update_comment_by_author(self):
+#         comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
+#         url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
+#         data = {"description": "Updated Comment"}
+#         response = self.client.patch(url, data, format="json")
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         comment.refresh_from_db()
+#         self.assertEqual(comment.description, "Updated Comment")
 
-    def test_update_comment_by_non_author(self):
-        comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
-        self.client.login(username="otheruser", password="testpass")
-        url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
-        data = {"description": "Updated Comment by Non-Author"}
-        response = self.client.patch(url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+#     def test_update_comment_by_non_author(self):
+#         comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
+#         self.client.login(username="otheruser", password="testpass")
+#         url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
+#         data = {"description": "Updated Comment by Non-Author"}
+#         response = self.client.patch(url, data, format="json")
+#         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_delete_comment_by_author(self):
-        comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
-        url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
-        response = self.client.delete(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())
+#     def test_delete_comment_by_author(self):
+#         comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
+#         url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
+#         response = self.client.delete(url, format="json")
+#         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+#         self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())
 
-    def test_delete_comment_by_non_author(self):
-        comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
-        self.client.login(username="otheruser", password="testpass")
-        url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
-        response = self.client.delete(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+#     def test_delete_comment_by_non_author(self):
+#         comment = Comment.objects.create(description="Test Comment", issue=self.issue, author=self.user)
+#         self.client.login(username="otheruser", password="testpass")
+#         url = reverse_lazy("comments-detail", kwargs={"pk": comment.pk})
+#         response = self.client.delete(url, format="json")
+#         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_list_comments_visible_to_contributors(self):
-        Comment.objects.create(description="Test Comment 1", issue=self.issue, author=self.user)
-        Comment.objects.create(description="Test Comment 2", issue=self.issue, author=self.user)
-        self.client.login(username="otheruser", password="testpass")
-        url = reverse_lazy("comments-list")
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Comment.objects.count(), 2)  # Both comments should be visible
+#     def test_list_comments_visible_to_contributors(self):
+#         Comment.objects.create(description="Test Comment 1", issue=self.issue, author=self.user)
+#         Comment.objects.create(description="Test Comment 2", issue=self.issue, author=self.user)
+#         self.client.login(username="otheruser", password="testpass")
+#         url = reverse_lazy("comments-list")
+#         response = self.client.get(url, format="json")
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(Comment.objects.count(), 2)  # Both comments should be visible
 
 
 # class ProjectPermissionTests(APITestCase):

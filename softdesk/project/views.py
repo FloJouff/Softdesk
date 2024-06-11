@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
 from project.serializers import (
@@ -94,6 +94,9 @@ class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
         return Issue.objects.filter(project__contributors=self.request.user)
 
     def perform_create(self, serializer):
+        project = serializer.validated_data["project"]
+        if not project.contributors.filter(id=self.request.user.id).exists():
+            raise PermissionDenied("You are not a contributor to this project.")
         serializer.save(author=self.request.user)
 
 
