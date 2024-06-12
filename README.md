@@ -25,23 +25,23 @@ Une restriction d'inscription relative à l'âge de l'utilisateur est également
 Tous les utilisateurs connectés peuvent consulter les projets existants.
 Un utilisateur peut créer un projet. Il en devient l'auteur et le contributeur.
 Lors de la création, il peut désigner d'autre utilisateurs inscrits comme contributeurs à ce projet.
-Seuls les contributeurs peuvent avoir accès aux ressources qui référencent un projet (<<issues>> et <<comments>>) et accéder au détail de ce projet.
+Seuls les contributeurs peuvent avoir accès aux ressources qui référencent un projet (<issues> et <comments>) et accéder au détail de ce projet.
 
 ### Création des tâches et des problèmes (issues)
 
-Un contributeur qui travaille sur un projet doit pouvoir créer des <<Issues>>.
+Un contributeur qui travaille sur un projet doit pouvoir créer des <Issues>.
 Ces <<Issues>> permettent de planifier des fonctionnalités à mettre en oeuvre ou des bugs à régler dans un projet donné.
-Les de la création de l'issu, le contributeur la nomme et donne une description. il peut l'assigner à un autre contributeur qu'il désigne comme <<assignee>>.
+Les de la création de l'issu, le contributeur la nomme et donne une description. il peut l'assigner à un autre contributeur qu'il désigne comme <assignee>.
 Cependant, seul un autre contributeur au projet peut être désigné comme tel.
 
 ### Création des commentaires (comments)
 
-Afin de mieux cerner les problèmes et faciliter la communication, les contributeurs d'un projet peuvent commenter les <<issues>>
+Afin de mieux cerner les problèmes et faciliter la communication, les contributeurs d'un projet peuvent commenter les <issues>
 
 ### Informations complémentaires
 
 Seul l'auteur d'une ressource peut la modifier ou la supprimer.
-Seuls les utilisateurs autorisés(<<contributor>>) peuvent consulter une ressource.
+Seuls les utilisateurs autorisés(<contributor>) peuvent consulter une ressource.
 
 un système de pagination a été mis en place pour gérer le listage des ressources et éviter les charges excessives.
 
