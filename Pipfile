@@ -9,6 +9,7 @@ djangorestframework = "*"
 django-allauth = "*"
 markdown = "*"
 djangorestframework-simplejwt = "*"
+drf-nested-routers = "*"
 
 [dev-packages]
 

@@ -5,10 +5,11 @@ from authentication.models import User
 
 class ContributorSerializer(serializers.ModelSerializer):
     project = serializers.CharField(source="project.name")
+    contributor = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
 
     class Meta:
         model = Contributor
-        fields = ["contributor", "project"]
+        fields = ["id", "contributor", "project"]
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -68,12 +69,12 @@ class IssueListSerializer(serializers.ModelSerializer):
 
 
 class ProjectListSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
+    # author = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
     contributors = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all(), many=True)
 
     class Meta:
         model = Project
-        fields = ["id", "name", "type", "author", "contributors"]
+        fields = ["id", "name", "description", "type", "contributors"]
 
     def validate(self, data):
         author = data["author"]

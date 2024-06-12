@@ -14,7 +14,7 @@ from project.serializers import (
 from project.models import Project, Contributor, Issue, Comment
 from authentication.models import User
 from project.permissions import (
-    IsAuthorOrAssignee,
+    IssuesPermissions,
     IsAuthorOrReadOnlyForContributorsProject,
     IsProjectContributor_Comment,
     IsProjectContributor_Issue,
@@ -71,9 +71,11 @@ class ContributorViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = ContributorSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Contributor.objects.all()
+        project_id = self.kwargs["project_pk"]
+        return Contributor.objects.filter(project__id=project_id)
 
 
 class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
@@ -83,7 +85,7 @@ class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
 
     queryset = Issue.objects.all()
     serializer_class = IssueListSerializer
-    permission_classes = [IsAuthenticated, IsAuthorOrAssignee, IsProjectContributor_Issue]
+    permission_classes = [IsAuthenticated, IssuesPermissions, IsProjectContributor_Issue]
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
@@ -91,13 +93,11 @@ class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
         return IssueDetailSerializer
 
     def get_queryset(self):
-        return Issue.objects.filter(project__contributors=self.request.user)
+        return Issue.objects.filter(project_id=self.kwargs["project_pk"])
 
     def perform_create(self, serializer):
-        project = serializer.validated_data["project"]
-        if not project.contributors.filter(id=self.request.user.id).exists():
-            raise PermissionDenied("You are not a contributor to this project.")
-        serializer.save(author=self.request.user)
+        project = Project.objects.get(pk=self.kwargs["project_pk"])
+        serializer.save(author=self.request.user, project=project)
 
 
 class CommentViewSet(viewsets.ModelViewSet, MultipleSerializerMixin):
@@ -110,7 +110,8 @@ class CommentViewSet(viewsets.ModelViewSet, MultipleSerializerMixin):
     permission_classes = [IsAuthenticated, IsProjectContributor_Comment]
 
     def get_queryset(self):
-        return Comment.objects.filter(issue__project__contributors=self.request.user)
+        return Comment.objects.filter(issue_id=self.kwargs["issue_pk"])
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        issue = Issue.objects.get(pk=self.kwargs["issue_pk"])
+        serializer.save(author=self.request.user, issue=issue)

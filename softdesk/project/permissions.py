@@ -16,10 +16,17 @@ class IsAuthorOrReadOnlyForContributorsProject(BasePermission):
         return obj.author == request.user
 
 
-class IsAuthorOrAssignee(BasePermission):
+class IssuesPermissions(BasePermission):
     def has_object_permission(self, request, view, obj):
         # Read permissions are allowed to any assignee of the project
         return obj.author == request.user or obj.assignee == request.user
+
+    # def has_permissions(self, request):
+    #     if request.method in SAFE_METHODS:
+    #         #if contributor or author
+    #         return True
+    #     else:
+    #        # if contributor or author:
 
 
 class IsProjectContributor_Comment(BasePermission):
