@@ -110,26 +110,23 @@ puis, en l'absence de message d'erreur:
 |2 |POST            |/api/token/                                                        |Connexion d'un utilisateur               |
 |3 |POST            |/api/token/refresh/                                                |Refresh token d'un utilisateur           |
 |4 |GET             |/api/users/                                                        |Liste des utilisateurs                   |
-|5 |GET             |/api/users/{user_id}/                                              |Détail de l'utilisateurs connecté        |
-|6 |PATCH           |/api/users/{user_id}/                                              |Modifications de l'utilisateurs connecté |
-|7 |DELETE          |/api/users/{user_id}/                                              |Suppression de l'utilisateurs connecté   |
-|--|----------------|-------------------------------------------------------------------|-----------------------------------------|
+|5 |GET             |/api/users/{user_id}/                                              |Détail de l'utilisateur connecté         |
+|6 |PATCH           |/api/users/{user_id}/                                              |Modifications de l'utilisateur connecté  |
+|7 |DELETE          |/api/users/{user_id}/                                              |Suppression de l'utilisateur connecté    |
 |8 |POST            |/api/projects/                                                     |Création d'un projet                     |
 |9 |GET             |/api/projects/                                                     |Liste des projects                       |
 |10|GET             |/api/projects/{project_id}/                                        |Détails d'un projet                      |
 |11|PATCH           |/api/projects/{project_id}/                                        |Modification d'un projet                 |
 |12|DELETE          |/api/projects/{project_id}/                                        |Suppression d'un projet                  |
-|--|----------------|-------------------------------------------------------------------|-----------------------------------------|
 |13|POST            |/api/projects/{project_id}/issues/                                 |Création d'une issue                     |
 |14|GET             |/api/projects/{project_id}/issues/                                 |Liste des issues d'un projet             |
 |15|GET             |/api/projects/{project_id}/issues/{issue_id}/                      |Détails d'une issue                      |
 |16|PATCH           |/api/projects/{project_id}/issues/{issue_id}/                      |Modification d'une issue (par son auteur)|
 |17|DELETE          |/api/projects/{project_id}/issues/{issue_id}/                      |Suppression d'un projet (par son auteur) |
-|--|----------------|-------------------------------------------------------------------|-----------------------------------------|
 |18|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/             |Création d'un comment                    |
-|19|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/             |Liste des comments d'une issues          |
+|19|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/             |Liste des comments d'une issue           |
 |20|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/|Détails d'un comment                     |
 |21|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/|Modification d'un comment(par son auteur)|
 |22|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/|Suppression d'un comment(par son auteur) |
-|--|----------------|-------------------------------------------------------------------|-----------------------------------------|
 |23|GET             |/api/projects/{project_id}/contributors/                           |Liste des contributeurs d'un projet      |
+

@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -9,12 +9,12 @@ from project.serializers import (
     ContributorSerializer,
     IssueListSerializer,
     IssueDetailSerializer,
+    IssueCreateUpdateSerializer,
     CommentSerializer,
 )
 from project.models import Project, Contributor, Issue, Comment
 from authentication.models import User
 from project.permissions import (
-    IssuesPermissions,
     IsAuthorOrReadOnlyForContributorsProject,
     IsProjectContributor_Comment,
     IsProjectContributor_Issue,
@@ -24,10 +24,13 @@ from project.permissions import (
 class MultipleSerializerMixin:
 
     detail_serializer_class = None
+    create_update_serializer_class = None
 
     def get_serializer_class(self):
         if self.action == "retrieve" and self.detail_serializer_class is not None:
             return self.detail_serializer_class
+        if self.action in ["create", "update", "partial_update"] and self.create_update_serializer_class is not None:
+            return self.create_update_serializer_class
         return super().get_serializer_class()
 
 
@@ -65,9 +68,9 @@ class ProjectViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
                 raise ValidationError(f"User with username '{username}' does not exist.")
 
 
-class ContributorViewSet(viewsets.ModelViewSet):
+class ContributorViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
     """
-    API endpoint that allows Contributor to be created, viewed, edited or deleted.
+    API endpoint that allows Contributor to be added or viewed.
     """
 
     serializer_class = ContributorSerializer
@@ -75,7 +78,20 @@ class ContributorViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         project_id = self.kwargs["project_pk"]
-        return Contributor.objects.filter(project__id=project_id)
+        return Project.objects.get(id=project_id).contributors.all()
+
+    def create(self, request, *args, **kwargs):
+        project = Project.objects.get(pk=self.kwargs["project_pk"])
+        serializer = self.get_serializer(data=request.data, context={"project": project})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer):
+        project = Project.objects.get(pk=self.kwargs["project_pk"])
+        user = User.objects.get(username=[username])
+        project.contributors.add(user)
+        project.save()
 
 
 class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
@@ -85,12 +101,18 @@ class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
 
     queryset = Issue.objects.all()
     serializer_class = IssueListSerializer
-    permission_classes = [IsAuthenticated, IssuesPermissions, IsProjectContributor_Issue]
+    detail_serializer_class = IssueDetailSerializer
+    create_update_serializer_class = IssueCreateUpdateSerializer
+    permission_classes = [IsAuthenticated, IsProjectContributor_Issue]
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list"]:
             return IssueListSerializer
-        return IssueDetailSerializer
+        if self.action in ["retrieve"]:
+            return IssueDetailSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return IssueCreateUpdateSerializer
+        return super().get_serializer_class()
 
     def get_queryset(self):
         return Issue.objects.filter(project_id=self.kwargs["project_pk"])
