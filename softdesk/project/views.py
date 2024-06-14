@@ -1,5 +1,7 @@
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, status
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
@@ -68,30 +70,60 @@ class ProjectViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
                 raise ValidationError(f"User with username '{username}' does not exist.")
 
 
-class ContributorViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
+class ContributorViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Contributor to be added or viewed.
     """
-
+    queryset = User.objects.all()
     serializer_class = ContributorSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAuthorOrReadOnlyForContributorsProject]
 
     def get_queryset(self):
-        project_id = self.kwargs["project_pk"]
-        return Project.objects.get(id=project_id).contributors.all()
+        project = Project.objects.get(pk=self.kwargs["project_pk"])
+        return project.contributors.all()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["project"] = Project.objects.get(pk=self.kwargs["project_pk"])
+        return context
 
     def create(self, request, *args, **kwargs):
-        project = Project.objects.get(pk=self.kwargs["project_pk"])
-        serializer = self.get_serializer(data=request.data, context={"project": project})
+        project = get_object_or_404(Project, pk=self.kwargs["project_pk"])
+        self.check_object_permissions(request, project)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def perform_create(self, serializer):
-        project = Project.objects.get(pk=self.kwargs["project_pk"])
-        user = User.objects.get(username=[username])
+        user = serializer.save()
         project.contributors.add(user)
-        project.save()
+        return Response({"status": "contributor added", "username": user.username}, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=False, methods=["post"], permission_classes=[IsAuthenticated, IsAuthorOrReadOnlyForContributorsProject]
+    )
+    def add_contributor(self, request, project_pk=None):
+        project = get_object_or_404(Project, pk=project_pk)
+        self.check_object_permissions(request, project)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        project.contributors.add(user)
+        return Response({"status": "contributor added", "username": user.username}, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path="remove_contributor",
+        permission_classes=[IsAuthenticated, IsAuthorOrReadOnlyForContributorsProject],
+    )
+    def remove_contributor(self, request, project_pk=None, pk=None):
+        project = get_object_or_404(Project, pk=project_pk)
+        self.check_object_permissions(request, project)
+        user = get_object_or_404(User, pk=pk)
+        if user in project.contributors.all():
+            project.contributors.remove(user)
+            return Response(
+                {"status": "contributor removed", "username": user.username}, status=status.HTTP_204_NO_CONTENT
+            )
+        return Response({"status": "user not a contributor"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):

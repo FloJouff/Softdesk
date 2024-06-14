@@ -107,7 +107,7 @@ puis, en l'absence de message d'erreur:
 |# | *Methode HTTP* | *URL (base: http://127.0.0.1:800)*                                | *Endpoint de l'API*                     |
 |--|----------------|-------------------------------------------------------------------|-----------------------------------------|
 |1 |POST            |/api/users/                                                        |Inscription d'un utilisateur             |
-|2 |POST            |/api/token/                                                        |Connexion d'un utilisateur               |
+|2 |POST            |/api-auth/login/?next=/api/users/                                  |Connexion d'un utilisateur               |
 |3 |POST            |/api/token/refresh/                                                |Refresh token d'un utilisateur           |
 |4 |GET             |/api/users/                                                        |Liste des utilisateurs                   |
 |5 |GET             |/api/users/{user_id}/                                              |Détail de l'utilisateur connecté         |
@@ -129,4 +129,4 @@ puis, en l'absence de message d'erreur:
 |21|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/|Modification d'un comment(par son auteur)|
 |22|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/|Suppression d'un comment(par son auteur) |
 |23|GET             |/api/projects/{project_id}/contributors/                           |Liste des contributeurs d'un projet      |
-
+|24|POST            |/api/projects/{project_id}/contributors/add_contributor/           |Ajoute un contributeur au projet(par son auteur)|

@@ -4,9 +4,23 @@ from authentication.models import User
 
 
 class ContributorSerializer(serializers.ModelSerializer):
+    username = serializers.CharField()
     class Meta:
         model = User
         fields = ["id", "username"]
+
+    def validate_username(self, value):
+        try:
+            user = User.objects.get(username=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User does not exist.")
+        return user
+
+    def create(self, validated_data):
+        project = self.context["project"]
+        user = User.objects.get(username=validated_data["username"])
+        project.contributors.add(user)
+        return user
 
 
 class CommentSerializer(serializers.ModelSerializer):
