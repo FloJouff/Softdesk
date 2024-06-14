@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from project.serializers import (
     ProjectListSerializer,
@@ -49,7 +51,11 @@ class ProjectViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
     def get_queryset(self):
-        return Project.objects.all()
+        return Project.objects.all().select_related("author").prefetch_related("issues")
+
+    @method_decorator(cache_page(60 * 15))  # cache for 15 minutes
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -131,7 +137,7 @@ class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
     API endpoint that allows Issues to be created, viewed, edited or deleted.
     """
 
-    queryset = Issue.objects.all()
+    queryset = Issue.objects.all().select_related("project", "author", "assignee").prefetch_related("comments")
     serializer_class = IssueListSerializer
     detail_serializer_class = IssueDetailSerializer
     create_update_serializer_class = IssueCreateUpdateSerializer
@@ -147,7 +153,11 @@ class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def get_queryset(self):
-        return Issue.objects.filter(project_id=self.kwargs["project_pk"])
+        return (
+            Issue.objects.filter(project_id=self.kwargs["project_pk"])
+            .select_related("project", "author", "assignee")
+            .prefetch_related("comments")
+        )
 
     def perform_create(self, serializer):
         project = Project.objects.get(pk=self.kwargs["project_pk"])
@@ -159,12 +169,12 @@ class CommentViewSet(viewsets.ModelViewSet, MultipleSerializerMixin):
     API endpoint that allows Comments to be created, viewed, edited or deleted.
     """
 
-    queryset = Comment.objects.all()
+    queryset = Comment.objects.all().select_related("author", "issue")
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated, IsProjectContributor_Comment]
 
     def get_queryset(self):
-        return Comment.objects.filter(issue_id=self.kwargs["issue_pk"])
+        return Comment.objects.filter(issue_id=self.kwargs["issue_pk"]).select_related("author", "issue")
 
     def perform_create(self, serializer):
         issue = Issue.objects.get(pk=self.kwargs["issue_pk"])

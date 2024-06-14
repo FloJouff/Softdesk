@@ -103,11 +103,14 @@ puis, en l'absence de message d'erreur:
 
 ---
 ## Liste des points de terminaison de l'API:
+
+Les endpoints suivants peuvent être testés via **Postman**.
+cf documentation: https://documenter.getpostman.com/view/30008910/2sA3XQgMEk
    
 |# | *Methode HTTP* | *URL (base: http://127.0.0.1:800)*                                          | *Endpoint de l'API*                              |
 |--|----------------|-----------------------------------------------------------------------------|--------------------------------------------------|
 |1 |POST            |/api/users/                                                                  |Inscription d'un utilisateur                      |
-|2 |POST            |/api-auth/login/?next=/api/users/                                            |Connexion d'un utilisateur                        |
+|2 |POST            |/api/token/                                                                  |Connexion d'un utilisateur                        |
 |3 |POST            |/api/token/refresh/                                                          |Refresh token d'un utilisateur                    |
 |4 |GET             |/api/users/                                                                  |Liste des utilisateurs                            |
 |5 |GET             |/api/users/{user_id}/                                                        |Détail de l'utilisateur connecté                  |
