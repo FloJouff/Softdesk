@@ -1,29 +1,29 @@
 from rest_framework import serializers
 from project.models import Project, Contributor, Issue, Comment
 from authentication.models import User
+from authentication.serializers import UserSerializer
 
 
 class ContributorSerializer(serializers.ModelSerializer):
-    username = serializers.CharField()
-    class Meta:
-        model = User
-        fields = ["id", "username"]
+    """contributor serializer"""
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
-    def validate_username(self, value):
-        try:
-            user = User.objects.get(username=value)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("User does not exist.")
-        return user
+    class Meta:
+        model = Contributor
+        fields = ["id", "user"]
 
     def create(self, validated_data):
         project = self.context["project"]
-        user = User.objects.get(username=validated_data["username"])
-        project.contributors.add(user)
-        return user
+        user = validated_data["user"]
+        if Contributor.objects.filter(project=project, user=user).exists():
+            raise serializers.ValidationError("This user is already a contributor of the project.")
+        contributor = Contributor(project=project, user=user)
+        contributor.save()
+        return contributor
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Serializer for Comments"""
     author = serializers.ReadOnlyField(source="author.username")
 
     class Meta:
@@ -37,6 +37,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class IssueDetailSerializer(serializers.ModelSerializer):
+    """Serializer for Issues's detail view"""
     project = serializers.SlugRelatedField(slug_field="name", queryset=Project.objects.all())
     assignee = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all(), allow_null=True)
     author = serializers.ReadOnlyField(source="author.username")
@@ -58,18 +59,10 @@ class IssueDetailSerializer(serializers.ModelSerializer):
             "comments",
         ]
 
-    def validate(self, data):
-        project = data.get("project")
-        assignee = data.get("assignee")
-
-        if assignee and not project.contributors.filter(id=assignee.id).exists():
-            raise serializers.ValidationError({"assignee": "The assignee must be a contributor of the project."})
-
-        return data
-
 
 class IssueCreateUpdateSerializer(serializers.ModelSerializer):
-    project = serializers.SlugRelatedField(slug_field="name", queryset=Project.objects.all())
+    """Serializer for Create or Update methods of Issues"""
+    project = serializers.SlugRelatedField(slug_field="id", queryset=Project.objects.all())
     assignee = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all(), allow_null=True)
     author = serializers.ReadOnlyField(source="author.username")
 
@@ -92,13 +85,16 @@ class IssueCreateUpdateSerializer(serializers.ModelSerializer):
         project = data.get("project")
         assignee = data.get("assignee")
 
-        if assignee and not project.contributors.filter(id=assignee.id).exists():
+        # if assignee and not project.contributors.filter(contributor=assignee).exists():
+        #     raise serializers.ValidationError({"assignee": "The assignee must be a contributor of the project."})
+        if assignee and not Contributor.objects.filter(project=project, user=assignee).exists():
             raise serializers.ValidationError({"assignee": "The assignee must be a contributor of the project."})
 
         return data
 
 
 class IssueListSerializer(serializers.ModelSerializer):
+    """Serializer for List of Issues"""
     author = serializers.ReadOnlyField(source="author.username")
 
     class Meta:
@@ -118,38 +114,43 @@ class IssueListSerializer(serializers.ModelSerializer):
 
 
 class ProjectListSerializer(serializers.ModelSerializer):
+    """Serializer for List of Projects view"""
     author = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
-    contributors = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all(), many=True)
 
     class Meta:
         model = Project
         fields = ["id", "name", "description", "author", "type", "contributors"]
 
     def validate(self, data):
-        author = data["author"]
-        contributors = list(data.get("contributors", []))
+        author = data.get("author", None)
 
-        if author not in contributors:
-            contributors.append(author)
+        if not author and self.instance:
+            author = self.instance.author
 
-        data["contributors"] = contributors
         return data
 
     def create(self, validated_data):
-        contributors = validated_data.pop("contributors")
         project = Project.objects.create(**validated_data)
-        project.contributors.set(contributors)
         return project
+
+    def validate_name(self, value):
+        request = self.context.get("request")
+        project_id = self.context.get("view").kwargs.get("pk")
+
+        if Project.objects.filter(name=value).exclude(id=project_id).exists():
+            raise serializers.ValidationError("This project already exists")
+        return value
 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
+    """Serializer for Projects's detail view"""
     author = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
-    contributors = ContributorSerializer(many=True, read_only=True)
+    # contributors = ContributorSerializer(many=True)
     issues = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = ["id", "name", "description", "type", "author", "contributors", "issues", "created_time"]
+        fields = ["id", "name", "description", "type", "author", "issues", "created_time"]
 
     def get_issues(self, instance):
         queryset = instance.issues.filter(status="TODO")
@@ -157,29 +158,20 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def validate(self, data):
-        author = data["author"]
-        contributors = list(data.get("contributors", []))
-
         request = self.context.get("request")
-        if request and request.method == "PATCH":
-            return data
-        author = data.get("author")
-        if not author:
-            raise serializers.ValidationError({"author": "This field is required."})
-        if author not in contributors:
-            contributors.append(author)
 
-        data["contributors"] = contributors
+        if request and request.method in ["POST", "PUT", "PATCH"]:
+            if "author" not in data:
+                data["author"] = getattr(self.instance, "author", request.user)
+
+            contributors = list(data.get("contributors", []))
+            if data["author"] not in contributors:
+                contributors.append(data["author"])
+            data["contributors"] = contributors
         return data
 
     def update(self, instance, validated_data):
         contributors = validated_data.pop("contributors", None)
         instance = super().update(instance, validated_data)
-
-        if contributors is not None:
-            for username in contributors:
-                user = User.objects.get(username=username)
-                if user not in instance.contributors.all():
-                    instance.contributors.add(user)
 
         return instance

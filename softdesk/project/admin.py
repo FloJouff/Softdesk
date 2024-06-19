@@ -10,7 +10,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 class ContributorAdmin(admin.ModelAdmin):
 
-    list_display = ("contributor", "project")
+    list_display = ("user", "project")
 
 
 class IssueAdmin(admin.ModelAdmin):

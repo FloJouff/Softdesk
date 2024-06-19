@@ -29,11 +29,11 @@ class Project(models.Model):
 
 class Contributor(models.Model):
     """Contributor model"""
-    contributor = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.contributor.username}"
+        return f"{self.user.username}"
 
 
 class Issue(models.Model):

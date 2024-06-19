@@ -76,7 +76,7 @@ Placez vous à la racine du projet puis effectuer les migrations:
 
     $ python manage.py makemigrations
 
-puis, en l'absence de message d'erreur:
+puis, en l'absence de message d'erreur, tapez:
 
     $ python manage.py migrate
 
@@ -132,5 +132,5 @@ cf documentation: https://documenter.getpostman.com/view/30008910/2sA3XQgMEk
 |21|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/          |Modification d'un comment(par son auteur)         |
 |22|POST            |/api/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/          |Suppression d'un comment(par son auteur)          |
 |23|GET             |/api/projects/{project_id}/contributors/                                     |Liste des contributeurs d'un projet               |
-|24|POST            |/api/projects/{project_id}/contributors/add_contributor/                     |Ajoute un contributeur au projet(par son auteur)  |
-|25|DELETE          |/api/projects/{project_id}/contributors/{contributor_id}/remove_contributor/ |Supprime un contributeur du projet(par son auteur)|
+|24|POST            |/api/projects/{project_id}/contributors/                                     |Ajoute un contributeur au projet(par son auteur)  |
+|25|DELETE          |/api/projects/{project_id}/contributors/{contributor_id}/                    |Supprime un contributeur du projet(par son auteur)|

@@ -1,11 +1,9 @@
 from rest_framework import viewsets, status
-from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+# from django.utils.decorators import method_decorator
+# from django.views.decorators.cache import cache_page
 
 from project.serializers import (
     ProjectListSerializer,
@@ -53,9 +51,9 @@ class ProjectViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         return Project.objects.all().select_related("author").prefetch_related("issues")
 
-    @method_decorator(cache_page(60 * 15))  # cache for 15 minutes
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+    # @method_decorator(cache_page(60 * 15))  # cache for 15 minutes
+    # def list(self, request, *args, **kwargs):
+    #     return super().list(request, *args, **kwargs)
 
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -80,56 +78,23 @@ class ContributorViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Contributor to be added or viewed.
     """
-    queryset = User.objects.all()
+    queryset = Contributor.objects.all()
     serializer_class = ContributorSerializer
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnlyForContributorsProject]
 
     def get_queryset(self):
         project = Project.objects.get(pk=self.kwargs["project_pk"])
-        return project.contributors.all()
+        return Contributor.objects.filter(project=project)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["project"] = Project.objects.get(pk=self.kwargs["project_pk"])
         return context
 
-    def create(self, request, *args, **kwargs):
-        project = get_object_or_404(Project, pk=self.kwargs["project_pk"])
-        self.check_object_permissions(request, project)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        project.contributors.add(user)
-        return Response({"status": "contributor added", "username": user.username}, status=status.HTTP_201_CREATED)
-
-    @action(
-        detail=False, methods=["post"], permission_classes=[IsAuthenticated, IsAuthorOrReadOnlyForContributorsProject]
-    )
-    def add_contributor(self, request, project_pk=None):
-        project = get_object_or_404(Project, pk=project_pk)
-        self.check_object_permissions(request, project)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        project.contributors.add(user)
-        return Response({"status": "contributor added", "username": user.username}, status=status.HTTP_201_CREATED)
-
-    @action(
-        detail=True,
-        methods=["delete"],
-        url_path="remove_contributor",
-        permission_classes=[IsAuthenticated, IsAuthorOrReadOnlyForContributorsProject],
-    )
-    def remove_contributor(self, request, project_pk=None, pk=None):
-        project = get_object_or_404(Project, pk=project_pk)
-        self.check_object_permissions(request, project)
-        user = get_object_or_404(User, pk=pk)
-        if user in project.contributors.all():
-            project.contributors.remove(user)
-            return Response(
-                {"status": "contributor removed", "username": user.username}, status=status.HTTP_204_NO_CONTENT
-            )
-        return Response({"status": "user not a contributor"}, status=status.HTTP_400_BAD_REQUEST)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class IssueViewSet(MultipleSerializerMixin, viewsets.ModelViewSet):
