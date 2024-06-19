@@ -145,17 +145,20 @@ class ProjectListSerializer(serializers.ModelSerializer):
 class ProjectDetailSerializer(serializers.ModelSerializer):
     """Serializer for Projects's detail view"""
     author = serializers.SlugRelatedField(slug_field="username", queryset=User.objects.all())
-    # contributors = ContributorSerializer(many=True)
+    contributors = serializers.SerializerMethodField()
     issues = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = ["id", "name", "description", "type", "author", "issues", "created_time"]
+        fields = ["id", "name", "description", "type", "author", "contributors", "issues", "created_time"]
 
     def get_issues(self, instance):
-        queryset = instance.issues.filter(status="TODO")
+        queryset = instance.issues.all()
         serializer = IssueListSerializer(queryset, many=True)
         return serializer.data
+
+    def get_contributors(self, instance):
+        return [contributor.username for contributor in instance.contributors.all()]
 
     def validate(self, data):
         request = self.context.get("request")
