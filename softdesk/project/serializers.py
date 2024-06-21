@@ -158,7 +158,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_contributors(self, instance):
-        return [contributor.username for contributor in instance.contributors.all()]
+        return [contributor.id for contributor in instance.contributors.all()]
 
     def validate(self, data):
         request = self.context.get("request")
